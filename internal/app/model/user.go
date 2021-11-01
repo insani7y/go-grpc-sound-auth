@@ -64,7 +64,6 @@ func (u *User) GetAllThingsDone(filesBytes [][]byte) error {
 
 		fmt.Println(features)
 		fmt.Println(len(features))
-		break
 	}
 
 
