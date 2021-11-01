@@ -42,10 +42,6 @@ func (r *UserRepository) Create(u *model.User) error {
 		return err
 	}
 
-	if err := u.AfterCreate(); err != nil {
-		return err
-	}
-
 	return nil
 }
 

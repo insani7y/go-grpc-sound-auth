@@ -4,8 +4,8 @@ import (
 	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/reqww/go-rest-api/internal/app/fileHandler"
 	"golang.org/x/crypto/bcrypt"
-	"os"
 )
 
 type User struct {
@@ -43,18 +43,25 @@ func (u *User) BeforeCreate() error {
 	return nil
 }
 
-func (u *User) AfterCreate() error {
-	soundPath := fmt.Sprintf("%v/%v", SoundDir, u.ID)
-	err := os.MkdirAll(soundPath, 0777)
 
-	if err != nil {
-		return err
+func (u *User) GetAllThingsDone(filesBytes [][]byte) error {
+
+	handler := fileHandler.New()
+
+	for _, fileBytes := range filesBytes {
+		data, err := handler.DetermineAmplitudeValues(fileBytes)
+		if err != nil {
+			return err
+		}
+
+		frames := handler.FrameCut(data)
+
+		fmt.Println(frames)
+		fmt.Println(len(frames))
 	}
 
-	return nil
-}
 
-func (u *User) SaveFiles() error {
+
 	return nil
 }
 

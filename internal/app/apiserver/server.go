@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/reqww/go-rest-api/internal/app/auth"
@@ -10,15 +9,6 @@ import (
 	"github.com/reqww/go-rest-api/internal/app/store"
 	"github.com/sirupsen/logrus"
 	"net/http"
-)
-
-const (
-	ctxKeyUser ctxKey = iota
-	ctxKeyRequestId
-)
-
-var (
-	errIncorrectEmailOrPassword = errors.New("incorrect email or password")
 )
 
 type ctxKey int8
@@ -58,22 +48,17 @@ func (s *server) configureRouter() {
 }
 
 func (s *server) HandleUsersCreate() http.HandlerFunc {
-	type request struct {
-		Email string `json:"email"`
-		Password string `json:"password"`
-	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		req := &request{}
-		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		filesBytes, err := s.ParseFiles(w, r)
+		if err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
 			return
 		}
 
 		u := &model.User {
-			Email: req.Email,
-			Password: req.Password,
+			Email: r.FormValue("email"),
+			Password: r.FormValue("password"),
 		}
 
 		if err := s.store.User().Create(u); err != nil {
@@ -81,11 +66,10 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 			return
 		}
 
-		if err := s.ParseFiles(w, r, u.ID); err != nil {
-			s.error(w, r, http.StatusUnprocessableEntity, err)
+		if err := u.GetAllThingsDone(filesBytes); err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
 
 		u.Sanitize()
 		s.respond(w, r, http.StatusCreated, u)
