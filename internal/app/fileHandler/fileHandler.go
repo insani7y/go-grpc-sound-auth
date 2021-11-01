@@ -1,6 +1,8 @@
 package fileHandler
 
-import "math"
+import (
+	"math"
+)
 
 type FileHandler struct{}
 
@@ -35,4 +37,47 @@ func (f *FileHandler) FrameCut(data []float64) [][]float64 {
 	}
 
 	return res
+}
+
+func (f *FileHandler) FourierTransform(frames [][]float64) [][]float64 {
+	for n, frame := range frames {
+		frames[n] = CalculateAmplitude(n, frame)
+	}
+
+	return frames
+}
+
+func (f *FileHandler) ToMelScale(amplitudes [][]float64) [][]float64 {
+
+	for i, amplitude := range amplitudes {
+		for j, value := range amplitude {
+			amplitudes[i][j] = HerzToMel(value)
+		}
+	}
+
+	return amplitudes
+}
+
+func (f *FileHandler) GetMelFeaturesArr(amplitudes [][]float64) []float64 {
+	var features []float64
+	var summs []float64
+
+	for _, amplitudeArr := range amplitudes {
+		var res float64 = 0
+		for _, melValue := range amplitudeArr {
+			res += melValue
+		}
+		summs = append(summs, res)
+	}
+
+	var finalValue float64
+	for k, sumValue := range summs {
+		finalValue += math.Log(sumValue) * (float64(k) - 1/2) * math.Pi / MelCoeffCount
+	}
+
+	for n := 1; n <= MelCoeffCount; n++ {
+		features = append(features, finalValue * float64(n))
+	}
+
+	return features
 }

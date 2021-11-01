@@ -56,8 +56,15 @@ func (u *User) GetAllThingsDone(filesBytes [][]byte) error {
 
 		frames := handler.FrameCut(data)
 
-		fmt.Println(frames)
-		fmt.Println(len(frames))
+		amplitudes := handler.FourierTransform(frames)
+
+		melAmplitudes := handler.ToMelScale(amplitudes)
+
+		features := handler.GetMelFeaturesArr(melAmplitudes)
+
+		fmt.Println(features)
+		fmt.Println(len(features))
+		break
 	}
 
 
