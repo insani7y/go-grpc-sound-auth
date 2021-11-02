@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/reqww/go-rest-api/internal/app/auth"
@@ -40,7 +41,7 @@ func (s *server) configureRouter() {
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 
 	s.router.HandleFunc("/register", s.HandleUsersCreate()).Methods("POST")
-	s.router.HandleFunc("/jwt", s.HandleJWTCreate()).Methods("POST")
+	//s.router.HandleFunc("/jwt", s.HandleJWTCreate()).Methods("POST")
 
 	private := s.router.PathPrefix("/api").Subrouter()
 	private.Use(s.AuthenticateUser)
@@ -58,7 +59,6 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 
 		u := &model.User {
 			Email: r.FormValue("email"),
-			Password: r.FormValue("password"),
 		}
 
 		if err := s.store.User().Create(u); err != nil {
@@ -66,46 +66,51 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 			return
 		}
 
-		if err := u.GetAllThingsDone(filesBytes); err != nil {
+		mfcc, err := auth.GetMFCCFeatures(filesBytes)
+
+		fmt.Println(mfcc)
+
+		s.store.AuthData()
+
+		if err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		u.Sanitize()
 		s.respond(w, r, http.StatusCreated, u)
 	}
 }
-
-func (s *server) HandleJWTCreate() http.HandlerFunc {
-	type request struct {
-		Email string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		req := &request{}
-		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-			s.error(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		u, err := s.store.User().FindByEmail(req.Email)
-		if err != nil || !u.ComparePassword(req.Password) {
-			s.error(w, r, http.StatusUnauthorized, errIncorrectEmailOrPassword)
-			return
-		}
-
-		token, err := auth.GenerateJWT(u.ID)
-		if err != nil {
-			s.error(w, r, http.StatusInternalServerError, err)
-		}
-
-		data := make(map[string]string)
-		data["access"] = token
-
-		s.respond(w, r, http.StatusOK, data)
-	}
-}
+//
+//func (s *server) HandleJWTCreate() http.HandlerFunc {
+//	type request struct {
+//		Email string `json:"email"`
+//		Password string `json:"password"`
+//	}
+//
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		req := &request{}
+//		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+//			s.error(w, r, http.StatusBadRequest, err)
+//			return
+//		}
+//
+//		u, err := s.store.User().FindByEmail(req.Email)
+//		if err != nil || !u.ComparePassword(req.Password) {
+//			s.error(w, r, http.StatusUnauthorized, errIncorrectEmailOrPassword)
+//			return
+//		}
+//
+//		token, err := auth.GenerateJWT(u.ID)
+//		if err != nil {
+//			s.error(w, r, http.StatusInternalServerError, err)
+//		}
+//
+//		data := make(map[string]string)
+//		data["access"] = token
+//
+//		s.respond(w, r, http.StatusOK, data)
+//	}
+//}
 
 func (s *server) HandleMe() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

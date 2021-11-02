@@ -65,18 +65,16 @@ func (f *FileHandler) GetMelFeaturesArr(amplitudes [][]float64) []float64 {
 	for _, amplitudeArr := range amplitudes {
 		var res float64 = 0
 		for _, melValue := range amplitudeArr {
-			res += melValue
+			if melValue > 0 {
+				res += math.Log(melValue)
+			}
 		}
 		summs = append(summs, res)
 	}
 
-	var finalValue float64
-	for k, sumValue := range summs {
-		finalValue += math.Log(sumValue) * (float64(k) - 1/2) * math.Pi / MelCoeffCount
-	}
-
 	for n := 1; n <= MelCoeffCount; n++ {
-		features = append(features, finalValue * float64(n))
+		finalValue := summs[n-1] * math.Pi / MelCoeffCount
+		features = append(features, finalValue)
 	}
 
 	return features

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/golang-jwt/jwt"
+	"github.com/reqww/go-rest-api/internal/app/fileHandler"
 	"net/http"
 	"time"
 )
@@ -53,4 +54,30 @@ func IsAuthenticated(r *http.Request) (*jwt.Token, error) {
 	} else {
 		return nil, ErrUnauthorized
 	}
+}
+
+func GetMFCCFeatures(filesBytes [][]byte) ([][]float64, error) {
+
+	handler := fileHandler.New()
+
+	var res [][]float64
+
+	for _, fileBytes := range filesBytes {
+		data, err := handler.DetermineAmplitudeValues(fileBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		frames := handler.FrameCut(data)
+
+		amplitudes := handler.FourierTransform(frames)
+
+		melAmplitudes := handler.ToMelScale(amplitudes)
+
+		features := handler.GetMelFeaturesArr(melAmplitudes)
+
+		res = append(res, features)
+	}
+
+	return res, nil
 }

@@ -9,6 +9,7 @@ import (
 type Store struct {
 	db *sql.DB
 	userRepository *UserRepository
+	authDataRepository *AuthDataRepository
 }
 
 func New(db *sql.DB) *Store {
@@ -27,4 +28,16 @@ func (s *Store) User() store.UserRepository {
 	}
 
 	return s.userRepository
+}
+
+func (s *Store) AuthData() store.AuthDataRepository {
+	if s.authDataRepository != nil {
+		return s.authDataRepository
+	}
+
+	s.authDataRepository = &AuthDataRepository{
+		store: s,
+	}
+
+	return s.authDataRepository
 }
