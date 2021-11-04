@@ -15,12 +15,8 @@ func (r *UserRepository) Create(u *model.User) error {
 		return err
 	}
 
-	if err := u.BeforeCreate(); err != nil {
-		return err
-	}
-
-	u.ID = len(r.users) + 1
-	r.users[u.ID] = u
+	u.UserId = len(r.users) + 1
+	r.users[u.UserId] = u
 	return nil
 }
 
@@ -40,4 +36,8 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 		}
 	}
 	return nil, store.ErrRecordNotFound
+}
+
+func (r *UserRepository) All() ([]*model.User, error) {
+	return nil, nil
 }

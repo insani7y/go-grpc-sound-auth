@@ -6,7 +6,7 @@ CREATE TABLE users (
 
 CREATE TABLE auth_data (
      auth_data_id INT GENERATED ALWAYS AS IDENTITY,
-     mfcc FLOAT[],
+     mfcc FLOAT[][],
      user_id INT,
      PRIMARY KEY(auth_data_id),
      CONSTRAINT fk_user

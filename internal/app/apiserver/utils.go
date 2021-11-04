@@ -2,32 +2,26 @@ package apiserver
 
 import (
 	"fmt"
-	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 )
 
 
 
-func (s *server) ParseFiles(w http.ResponseWriter, r *http.Request) ([][]byte, error) {
+func (s *server) ParseFiles(w http.ResponseWriter, r *http.Request) ([]multipart.File, error) {
 	if err := r.ParseMultipartForm(16384); err != nil {
 		return nil, err
 	}
 
-	res := make([][]byte, FilesCount)
+	var res []multipart.File
 
 	for i := 1; i <= FilesCount ; i++ {
 		file, _, err := r.FormFile(fmt.Sprintf("file%v", i))
 		if err != nil {
 			return nil, makeMissingOrIncorrectFileErr(i)
 		}
-		defer file.Close()
 
-		fileBytes, err := ioutil.ReadAll(file)
-		if err != nil {
-			return nil, err
-		}
-
-		res[i-1] = fileBytes
+		res = append(res, file)
 	}
 
 

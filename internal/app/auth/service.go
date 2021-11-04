@@ -1,8 +1,12 @@
 package auth
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/golang-jwt/jwt"
-	"github.com/reqww/go-rest-api/internal/app/fileHandler"
+	"io"
+	"log"
+	"mime/multipart"
 	"net/http"
 	"time"
 )
@@ -56,28 +60,48 @@ func IsAuthenticated(r *http.Request) (*jwt.Token, error) {
 	}
 }
 
-func GetMFCCFeatures(filesBytes [][]byte) ([][]float64, error) {
+type MFCCResponse struct {
+	MFCC [][]float64 `json:"mfcc"`
+}
 
-	handler := fileHandler.New()
-
-	var res [][]float64
-
-	for _, fileBytes := range filesBytes {
-		data, err := handler.DetermineAmplitudeValues(fileBytes)
-		if err != nil {
-			return nil, err
-		}
-
-		frames := handler.FrameCut(data)
-
-		amplitudes := handler.FourierTransform(frames)
-
-		melAmplitudes := handler.ToMelScale(amplitudes)
-
-		features := handler.GetMelFeaturesArr(melAmplitudes)
-
-		res = append(res, features)
+func GetMFCCFeatures(file multipart.File, url string) ([][]float64, error) {
+	client := &http.Client{
+		Timeout: time.Second * 10,
 	}
 
-	return res, nil
+	mfccRes := &MFCCResponse{}
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	fw, err := writer.CreateFormFile("file", "sound.wav")
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = io.Copy(fw, file)
+
+	if err != nil {
+		return nil, err
+	}
+
+	writer.Close()
+	req, err := http.NewRequest("POST", url, bytes.NewReader(body.Bytes()))
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	rsp, _ := client.Do(req)
+	if rsp.StatusCode != http.StatusOK {
+		log.Printf("Request failed with response code: %d", rsp.StatusCode)
+	}
+
+	if err := json.NewDecoder(rsp.Body).Decode(mfccRes); err != nil {
+		return nil, err
+	}
+
+	return mfccRes.MFCC, nil
 }

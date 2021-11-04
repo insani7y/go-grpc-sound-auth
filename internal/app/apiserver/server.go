@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/reqww/go-rest-api/internal/app/auth"
@@ -50,8 +49,10 @@ func (s *server) configureRouter() {
 
 func (s *server) HandleUsersCreate() http.HandlerFunc {
 
+	config := auth.NewConfig()
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		filesBytes, err := s.ParseFiles(w, r)
+		files, err := s.ParseFiles(w, r)
 		if err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
 			return
@@ -66,16 +67,7 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 			return
 		}
 
-		mfcc, err := auth.GetMFCCFeatures(filesBytes)
-
-		fmt.Println(mfcc)
-
-		s.store.AuthData()
-
-		if err != nil {
-			s.error(w, r, http.StatusInternalServerError, err)
-			return
-		}
+		s.store.AuthData().SaveMFCC(files, config.MFCCUrl, u.UserId)
 
 		s.respond(w, r, http.StatusCreated, u)
 	}

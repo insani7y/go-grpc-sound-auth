@@ -53,7 +53,7 @@ func TestUserRepository_FindById(t *testing.T) {
 	err := s.User().Create(u)
 	assert.NoError(t, err)
 
-	u, err = s.User().FindById(u.ID)
+	u, err = s.User().FindById(u.UserId)
 	assert.NoError(t, err)
 	assert.NotNil(t, u)
 }
