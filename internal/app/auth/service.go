@@ -6,6 +6,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"io"
 	"log"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"time"
@@ -104,4 +105,13 @@ func GetMFCCFeatures(file multipart.File, url string) ([][]float64, error) {
 	}
 
 	return mfccRes.MFCC, nil
+}
+
+func CalculateVecAbs(vec []float64) float64 {
+	var res float64
+	for _, value := range vec {
+		res += math.Pow(value, float64(2))
+	}
+
+	return math.Sqrt(res)
 }

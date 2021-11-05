@@ -1,7 +1,6 @@
 package sql_store
 
 import (
-	"github.com/lib/pq"
 	"github.com/reqww/go-rest-api/internal/app/auth"
 	"mime/multipart"
 )
@@ -11,10 +10,11 @@ type AuthDataRepository struct {
 }
 
 func (a *AuthDataRepository) Create(authData *auth.UserAuthData) error {
+
 	if err := a.store.db.QueryRow(
-		"INSERT INTO auth_data (user_id, mfcc) VALUES ($1, $2) RETURNING auth_data_id",
+		"INSERT INTO auth_data (user_id, features) VALUES ($1, $2) RETURNING auth_data_id",
 		authData.UserId,
-		pq.Array(authData.Features),
+		authData.Features,
 	).Scan(&authData.AuthDataId); err != nil {
 		return err
 	}
@@ -23,7 +23,23 @@ func (a *AuthDataRepository) Create(authData *auth.UserAuthData) error {
 }
 
 func (a *AuthDataRepository) All() ([]*auth.UserAuthData, error) {
-	return nil, nil
+	rows, err := a.store.db.Query("SELECT features, user_id FROM auth_data")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []*auth.UserAuthData
+
+	for rows.Next() {
+		authData := &auth.UserAuthData{}
+		if err := rows.Scan(&authData.Features, &authData.UserId); err != nil {
+			return nil, err
+		}
+		res = append(res, authData)
+	}
+
+	return res, nil
 }
 
 func (a *AuthDataRepository) SaveMFCC(files []multipart.File, url string, userId int) {
@@ -38,12 +54,32 @@ func (a *AuthDataRepository) CreateAuthData(file multipart.File, url string, use
 		panic(err)
 	}
 
+	features := new(auth.DataFeatures)
+	features.MFCC = mfcc
+
 	ud := &auth.UserAuthData {
 		UserId: userId,
-		Features: mfcc,
+		Features: *features,
 	}
 
 	if err := a.Create(ud); err != nil {
 		panic(err)
 	}
+}
+
+func (a *AuthDataRepository) DetermineUserBySound(mfcc [][]float64) (int, error) {
+
+	authData, err := a.All()
+	if err != nil {
+		return 0, err
+	}
+
+	m := auth.NewMap()
+
+	for _, data := range authData {
+		difference := data.Features.CalculateDifference(mfcc)
+		m.AddToKey(data.UserId, difference)
+	}
+
+	return m.UserMin(), nil
 }

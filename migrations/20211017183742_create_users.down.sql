@@ -1,2 +1,2 @@
-drop table users
-drop table auth_data
+drop table users;
+drop table auth_data;

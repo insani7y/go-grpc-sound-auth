@@ -8,14 +8,14 @@ import (
 
 
 
-func (s *server) ParseFiles(w http.ResponseWriter, r *http.Request) ([]multipart.File, error) {
+func (s *server) ParseFiles(w http.ResponseWriter, r *http.Request, numFiles int) ([]multipart.File, error) {
 	if err := r.ParseMultipartForm(16384); err != nil {
 		return nil, err
 	}
 
 	var res []multipart.File
 
-	for i := 1; i <= FilesCount ; i++ {
+	for i := 1; i <= numFiles ; i++ {
 		file, _, err := r.FormFile(fmt.Sprintf("file%v", i))
 		if err != nil {
 			return nil, makeMissingOrIncorrectFileErr(i)

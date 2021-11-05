@@ -10,7 +10,6 @@ type UserRepository interface {
 	Create(*model.User) error
 	FindByEmail(string) (*model.User, error)
 	FindById(int) (*model.User, error)
-	All() ([]*model.User, error)
 }
 
 type AuthDataRepository interface {
@@ -18,4 +17,5 @@ type AuthDataRepository interface {
 	All() ([]*auth.UserAuthData, error)
 	SaveMFCC([]multipart.File, string, int)
 	CreateAuthData(multipart.File, string, int)
+	DetermineUserBySound([][]float64) (int, error)
 }

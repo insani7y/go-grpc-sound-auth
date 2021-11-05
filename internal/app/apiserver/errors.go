@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	errIncorrectEmailOrPassword = errors.New("incorrect email or password")
+	NoUser = errors.New("incorrect email or bad sound")
 )
 
 func makeMissingOrIncorrectFileErr(ind int) error {

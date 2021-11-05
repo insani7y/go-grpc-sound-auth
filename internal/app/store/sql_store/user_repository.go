@@ -10,15 +10,11 @@ type UserRepository struct {
 	store *Store
 }
 
-func (r *UserRepository) All() ([]*model.User, error) {
-	return nil, nil
-}
-
 func (r *UserRepository) FindById(userID int) (*model.User, error) {
 	u := &model.User{}
 
 	if err := r.store.db.QueryRow(
-		"SELECT id, email FROM users WHERE user_id = $1", userID,
+		"SELECT user_id, email FROM users WHERE user_id = $1", userID,
 	).Scan(&u.UserId, &u.Email); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, store.ErrRecordNotFound
@@ -49,7 +45,7 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	u := &model.User{}
 
 	if err := r.store.db.QueryRow(
-		"SELECT id, email FROM users WHERE email = $1", email,
+		"SELECT user_id, email FROM users WHERE email = $1", email,
 		).Scan(&u.UserId, &u.Email); err != nil {
 			if err == sql.ErrNoRows {
 				return nil, store.ErrRecordNotFound

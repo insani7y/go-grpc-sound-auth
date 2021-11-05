@@ -40,7 +40,7 @@ func (s *server) configureRouter() {
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 
 	s.router.HandleFunc("/register", s.HandleUsersCreate()).Methods("POST")
-	//s.router.HandleFunc("/jwt", s.HandleJWTCreate()).Methods("POST")
+	s.router.HandleFunc("/jwt", s.HandleJWTCreate()).Methods("POST")
 
 	private := s.router.PathPrefix("/api").Subrouter()
 	private.Use(s.AuthenticateUser)
@@ -52,7 +52,7 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 	config := auth.NewConfig()
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		files, err := s.ParseFiles(w, r)
+		files, err := s.ParseFiles(w, r, FilesCount)
 		if err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
 			return
@@ -72,37 +72,49 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 		s.respond(w, r, http.StatusCreated, u)
 	}
 }
-//
-//func (s *server) HandleJWTCreate() http.HandlerFunc {
-//	type request struct {
-//		Email string `json:"email"`
-//		Password string `json:"password"`
-//	}
-//
-//	return func(w http.ResponseWriter, r *http.Request) {
-//		req := &request{}
-//		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-//			s.error(w, r, http.StatusBadRequest, err)
-//			return
-//		}
-//
-//		u, err := s.store.User().FindByEmail(req.Email)
-//		if err != nil || !u.ComparePassword(req.Password) {
-//			s.error(w, r, http.StatusUnauthorized, errIncorrectEmailOrPassword)
-//			return
-//		}
-//
-//		token, err := auth.GenerateJWT(u.ID)
-//		if err != nil {
-//			s.error(w, r, http.StatusInternalServerError, err)
-//		}
-//
-//		data := make(map[string]string)
-//		data["access"] = token
-//
-//		s.respond(w, r, http.StatusOK, data)
-//	}
-//}
+
+func (s *server) HandleJWTCreate() http.HandlerFunc {
+
+	config := auth.NewConfig()
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		files, err := s.ParseFiles(w, r, 1)
+		if err != nil {
+			s.error(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		mfcc, err := auth.GetMFCCFeatures(files[0], config.MFCCUrl)
+
+
+		userId, err := s.store.AuthData().DetermineUserBySound(mfcc)
+
+		if err != nil {
+			s.error(w, r ,http.StatusInternalServerError, err)
+			return
+		}
+
+
+		email := r.FormValue("email")
+		u, err := s.store.User().FindByEmail(email)
+
+		if err != nil || u.UserId != userId {
+			s.error(w, r, http.StatusUnauthorized, NoUser)
+			return
+		}
+
+		token, err := auth.GenerateJWT(userId)
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+		}
+
+		data := make(map[string]string)
+		data["access"] = token
+
+		s.respond(w, r, http.StatusOK, data)
+	}
+}
 
 func (s *server) HandleMe() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
