@@ -2,7 +2,7 @@ package apiserver
 
 import (
 	"encoding/json"
-	"github.com/gorilla/handlers"
+// 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/reqww/go-rest-api/internal/app/auth"
 	"github.com/reqww/go-rest-api/internal/app/model"
@@ -16,14 +16,14 @@ type ctxKey int8
 type server struct {
 	router *mux.Router
 	logger *logrus.Logger
-	store store.Store
+	store  store.Store
 }
 
 func newServer(store store.Store) *server {
 	s := &server{
 		router: mux.NewRouter(),
 		logger: logrus.New(),
-		store: store,
+		store:  store,
 	}
 
 	s.configureRouter()
@@ -37,14 +37,22 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) configureRouter() {
 	s.router.Use(s.SetRequestID)
-	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
+	s.router.Use(s.SetUpCors)
+// 	s.router.Use(
+// 		handlers.CORS(
+// 			handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
+// 			handlers.AllowedHeaders([]string{"Token, Content-type"}),
+// 			handlers.AllowedOrigins([]string{"localhost"}),
+// 			handlers.AllowCredentials(),
+// 		),
+// 	)
 
-	s.router.HandleFunc("/register", s.HandleUsersCreate()).Methods("POST")
-	s.router.HandleFunc("/jwt", s.HandleJWTCreate()).Methods("POST")
+	s.router.HandleFunc("/register", s.HandleUsersCreate()).Methods("POST", "OPTIONS")
+	s.router.HandleFunc("/jwt", s.HandleJWTCreate()).Methods("POST", "OPTIONS")
 
 	private := s.router.PathPrefix("/api").Subrouter()
 	private.Use(s.AuthenticateUser)
-	private.HandleFunc("/me", s.HandleMe()).Methods("GET")
+	private.HandleFunc("/me", s.HandleMe()).Methods("GET", "OPTIONS")
 }
 
 func (s *server) HandleUsersCreate() http.HandlerFunc {
@@ -58,7 +66,7 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 			return
 		}
 
-		u := &model.User {
+		u := &model.User{
 			Email: r.FormValue("email"),
 		}
 
@@ -87,14 +95,12 @@ func (s *server) HandleJWTCreate() http.HandlerFunc {
 
 		mfcc, err := auth.GetMFCCFeatures(files[0], config.MFCCUrl)
 
-
 		userId, err := s.store.AuthData().DetermineUserBySound(mfcc)
 
 		if err != nil {
-			s.error(w, r ,http.StatusInternalServerError, err)
+			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
 
 		email := r.FormValue("email")
 		u, err := s.store.User().FindByEmail(email)
@@ -121,7 +127,6 @@ func (s *server) HandleMe() http.HandlerFunc {
 		s.respond(w, r, http.StatusOK, r.Context().Value(ctxKeyUser).(*model.User))
 	}
 }
-
 
 func (s *server) error(w http.ResponseWriter, r *http.Request, code int, err error) {
 	s.respond(w, r, code, map[string]string{"error": err.Error()})
