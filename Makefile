@@ -2,8 +2,9 @@
 build:
 	go build -v ./cmd/apiserver
 
-.PHONY: test
-test:
-	go test -v -race -timeout 30s ./...
+
+.PHONY: grpc
+grpc:
+	go build -v ./cmd/grpcserver
 
 .DEFAULT_GOAL := build

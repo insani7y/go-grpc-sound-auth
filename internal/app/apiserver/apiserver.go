@@ -14,7 +14,7 @@ func Start(config *Config) error {
 	}
 	store := sql_store.New(db)
 	server := newServer(store)
-	server.logger.Info("Server started")
+	server.logger.Info("HTTP server started")
 	return http.ListenAndServe(config.BindAddr, server)
 }
 

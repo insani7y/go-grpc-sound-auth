@@ -1,0 +1,33 @@
+syntax="proto3";
+
+package grpcserver;
+
+option go_package = "/grpcserver";
+
+message UserCreateMessage {
+  string email = 1;
+  bytes file1 = 2;
+  bytes file2 = 3;
+  bytes file3 = 4;
+  bytes file4 = 5;
+  bytes file5 = 6;
+}
+
+message CreateJWTMessage {
+  string email = 1;
+  bytes file1 = 2;
+}
+
+message Status {
+  int64 status = 1;
+}
+
+message JWT {
+  string access = 1;
+}
+
+
+service SoundAuthService {
+  rpc CreateUser(UserCreateMessage) returns  (Status) {}
+  rpc CreateJWT(CreateJWTMessage) returns  (JWT) {}
+}

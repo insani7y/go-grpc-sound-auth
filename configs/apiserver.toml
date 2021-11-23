@@ -6,3 +6,6 @@ database_url = "host=localhost dbname=postgres sslmode=disable user=postgres pas
 token_header = "Token"
 auth_secret = "secret"
 mfcc_url = "http://127.0.0.1:8000/mfcc/"
+
+[grpc]
+bind_grpc_addr = ":9000"

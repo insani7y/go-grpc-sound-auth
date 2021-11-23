@@ -2,6 +2,7 @@ package sql_store
 
 import (
 	"github.com/reqww/go-rest-api/internal/app/auth"
+	"io"
 	"mime/multipart"
 )
 
@@ -44,11 +45,12 @@ func (a *AuthDataRepository) All() ([]*auth.UserAuthData, error) {
 
 func (a *AuthDataRepository) SaveMFCC(files []multipart.File, url string, userId int) {
 	for _, file := range files {
-		go a.CreateAuthData(file, url, userId)
+		fileBytes, _ := io.ReadAll(file)
+		go a.CreateAuthData(fileBytes, url, userId)
 	}
 }
 
-func (a *AuthDataRepository) CreateAuthData(file multipart.File, url string, userId int) {
+func (a *AuthDataRepository) CreateAuthData(file []byte, url string, userId int) {
 	mfcc, err := auth.GetMFCCFeatures(file, url)
 	if err != nil {
 		panic(err)

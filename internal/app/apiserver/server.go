@@ -2,7 +2,10 @@ package apiserver
 
 import (
 	"encoding/json"
-// 	"github.com/gorilla/handlers"
+	"github.com/reqww/go-rest-api/internal/app/grpcserver"
+	"io"
+
+	// 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/reqww/go-rest-api/internal/app/auth"
 	"github.com/reqww/go-rest-api/internal/app/model"
@@ -83,8 +86,6 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 
 func (s *server) HandleJWTCreate() http.HandlerFunc {
 
-	config := auth.NewConfig()
-
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		files, err := s.ParseFiles(w, r, 1)
@@ -93,32 +94,18 @@ func (s *server) HandleJWTCreate() http.HandlerFunc {
 			return
 		}
 
-		mfcc, err := auth.GetMFCCFeatures(files[0], config.MFCCUrl)
-
-		userId, err := s.store.AuthData().DetermineUserBySound(mfcc)
-
-		if err != nil {
-			s.error(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		email := r.FormValue("email")
-		u, err := s.store.User().FindByEmail(email)
-
-		if err != nil || u.UserId != userId {
-			s.error(w, r, http.StatusUnauthorized, NoUser)
-			return
-		}
-
-		token, err := auth.GenerateJWT(userId)
+		file := files[0]
+		fileBytes, err := io.ReadAll(file)
 		if err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
 		}
 
-		data := make(map[string]string)
-		data["access"] = token
+		jwt, err := grpcserver.CreateJWT(r.FormValue("email"), fileBytes)
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+		}
 
-		s.respond(w, r, http.StatusOK, data)
+		s.respond(w, r, http.StatusOK, jwt)
 	}
 }
 

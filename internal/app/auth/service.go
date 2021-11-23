@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/golang-jwt/jwt"
-	"io"
 	"log"
 	"math"
 	"mime/multipart"
@@ -65,7 +64,7 @@ type MFCCResponse struct {
 	MFCC [][]float64 `json:"mfcc"`
 }
 
-func GetMFCCFeatures(file multipart.File, url string) ([][]float64, error) {
+func GetMFCCFeatures(fileBytes []byte, url string) ([][]float64, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -80,7 +79,9 @@ func GetMFCCFeatures(file multipart.File, url string) ([][]float64, error) {
 		return nil, err
 	}
 
-	_, err = io.Copy(fw, file)
+	if _, err := fw.Write(fileBytes); err != nil {
+		return nil, err
+	}
 
 	if err != nil {
 		return nil, err

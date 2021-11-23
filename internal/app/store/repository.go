@@ -16,6 +16,6 @@ type AuthDataRepository interface {
 	Create(*auth.UserAuthData) error
 	All() ([]*auth.UserAuthData, error)
 	SaveMFCC([]multipart.File, string, int)
-	CreateAuthData(multipart.File, string, int)
+	CreateAuthData([]byte, string, int)
 	DetermineUserBySound([][]float64) (int, error)
 }
