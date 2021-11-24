@@ -2,9 +2,12 @@ package grpcserver
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/reqww/go-rest-api/internal/app/auth"
+	"github.com/reqww/go-rest-api/internal/app/model"
 	"github.com/reqww/go-rest-api/internal/app/store"
+	"github.com/reqww/go-rest-api/internal/app/store/sql_store"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"log"
@@ -15,9 +18,32 @@ type GRPCServer struct {
 	store  store.Store
 }
 
+func newDB(databaseURL string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", databaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
 func Start(config *Config) error {
 	s := grpc.NewServer()
-	srv := &GRPCServer{}
+
+	db, err := newDB(config.DatabaseURL)
+	defer db.Close()
+
+	if err != nil {
+		return err
+	}
+	store := sql_store.New(db)
+
+	srv := newGRPCServer(store)
+
 	RegisterSoundAuthServiceServer(s, srv)
 
 	l, err := net.Listen("tcp", config.BindGRPCAddr)
@@ -32,6 +58,20 @@ func Start(config *Config) error {
 }
 
 func (s *GRPCServer) CreateUser(ctx context.Context, req *UserCreateMessage) (*Status, error) {
+	config := auth.NewConfig()
+
+	u := &model.User{
+		Email: req.Email,
+	}
+
+	if err := s.store.User().Create(u); err != nil {
+		return nil, err
+	}
+
+	files := [][]byte{req.File1, req.File2, req.File3, req.File4, req.File5}
+
+	s.store.AuthData().SaveMFCC(files, config.MFCCUrl, u.UserId)
+
 	return &Status{Status: 0}, nil
 }
 

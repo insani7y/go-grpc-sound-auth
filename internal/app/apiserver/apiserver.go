@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/reqww/go-rest-api/internal/app/store/sql_store"
 	"net/http"
 )
@@ -14,7 +15,7 @@ func Start(config *Config) error {
 	}
 	store := sql_store.New(db)
 	server := newServer(store)
-	server.logger.Info("HTTP server started")
+	server.logger.Info(fmt.Sprintf("HTTP server started at %v", config.BindAddr))
 	return http.ListenAndServe(config.BindAddr, server)
 }
 

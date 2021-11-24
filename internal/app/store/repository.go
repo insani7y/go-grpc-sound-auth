@@ -3,7 +3,6 @@ package store
 import (
 	"github.com/reqww/go-rest-api/internal/app/auth"
 	"github.com/reqww/go-rest-api/internal/app/model"
-	"mime/multipart"
 )
 
 type UserRepository interface {
@@ -15,7 +14,7 @@ type UserRepository interface {
 type AuthDataRepository interface {
 	Create(*auth.UserAuthData) error
 	All() ([]*auth.UserAuthData, error)
-	SaveMFCC([]multipart.File, string, int)
+	SaveMFCC([][]byte, string, int)
 	CreateAuthData([]byte, string, int)
 	DetermineUserBySound([][]float64) (int, error)
 }

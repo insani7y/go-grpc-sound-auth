@@ -28,7 +28,7 @@ func CreateJWT(email string, fileBytes []byte) (string, error) {
 	return res.GetAccess(), nil
 }
 
-func CreateUser() (int64, error) {
+func CreateUser(email string, files [][]byte) (int64, error) {
 	config := NewConfig()
 
 	conn, err := grpc.Dial(config.BindGRPCAddr, grpc.WithInsecure())
@@ -39,12 +39,12 @@ func CreateUser() (int64, error) {
 	c := NewSoundAuthServiceClient(conn)
 
 	res, err := c.CreateUser(context.Background(), &UserCreateMessage{
-		Email:         "",
-		File1:         nil,
-		File2:         nil,
-		File3:         nil,
-		File4:         nil,
-		File5:         nil,
+		Email:         email,
+		File1:         files[0],
+		File2:         files[1],
+		File3:         files[2],
+		File4:         files[3],
+		File5:         files[4],
 	})
 	if err != nil {
 		log.Fatal(err)

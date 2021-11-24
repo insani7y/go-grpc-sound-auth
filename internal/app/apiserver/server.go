@@ -7,7 +7,6 @@ import (
 
 	// 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/reqww/go-rest-api/internal/app/auth"
 	"github.com/reqww/go-rest-api/internal/app/model"
 	"github.com/reqww/go-rest-api/internal/app/store"
 	"github.com/sirupsen/logrus"
@@ -59,9 +58,6 @@ func (s *server) configureRouter() {
 }
 
 func (s *server) HandleUsersCreate() http.HandlerFunc {
-
-	config := auth.NewConfig()
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		files, err := s.ParseFiles(w, r, FilesCount)
 		if err != nil {
@@ -69,18 +65,21 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 			return
 		}
 
-		u := &model.User{
-			Email: r.FormValue("email"),
+		var filesBytes [][]byte
+		for _, file := range files {
+			fileBytes, err := io.ReadAll(file)
+			if err != nil {
+				s.error(w, r, http.StatusInternalServerError, err)
+			}
+			filesBytes = append(filesBytes, fileBytes)
 		}
 
-		if err := s.store.User().Create(u); err != nil {
-			s.error(w, r, http.StatusUnprocessableEntity, err)
-			return
+		status, err := grpcserver.CreateUser(r.FormValue("email"), filesBytes)
+		if err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
 		}
 
-		s.store.AuthData().SaveMFCC(files, config.MFCCUrl, u.UserId)
-
-		s.respond(w, r, http.StatusCreated, u)
+		s.respond(w, r, http.StatusCreated, status)
 	}
 }
 
