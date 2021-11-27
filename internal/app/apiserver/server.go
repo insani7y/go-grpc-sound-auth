@@ -76,7 +76,7 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 
 		status, err := grpcserver.CreateUser(r.FormValue("email"), filesBytes)
 		if err != nil {
-		s.error(w, r, http.StatusInternalServerError, err)
+			s.error(w, r, http.StatusInternalServerError, err)
 		}
 
 		s.respond(w, r, http.StatusCreated, status)
@@ -104,7 +104,10 @@ func (s *server) HandleJWTCreate() http.HandlerFunc {
 			s.error(w, r, http.StatusInternalServerError, err)
 		}
 
-		s.respond(w, r, http.StatusOK, jwt)
+		var data = make(map[string]string)
+		data["access"] = jwt
+
+		s.respond(w, r, http.StatusOK, data)
 	}
 }
 

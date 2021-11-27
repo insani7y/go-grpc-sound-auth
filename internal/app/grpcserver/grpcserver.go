@@ -86,6 +86,10 @@ func (s *GRPCServer) CreateJWT(ctx context.Context, req *CreateJWTMessage) (*JWT
 		return nil, err
 	}
 
+	if err != nil {
+		return nil, err
+	}
+
 	email := req.Email
 	u, err := s.store.User().FindByEmail(email)
 

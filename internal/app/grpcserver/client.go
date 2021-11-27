@@ -12,7 +12,7 @@ func CreateJWT(email string, fileBytes []byte) (string, error) {
 
 	conn, err := grpc.Dial(config.BindGRPCAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	c := NewSoundAuthServiceClient(conn)
@@ -22,7 +22,7 @@ func CreateJWT(email string, fileBytes []byte) (string, error) {
 		File1:         fileBytes,
 	})
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	return res.GetAccess(), nil
@@ -46,8 +46,9 @@ func CreateUser(email string, files [][]byte) (int64, error) {
 		File4:         files[3],
 		File5:         files[4],
 	})
+
 	if err != nil {
-		log.Fatal(err)
+		return 1, err
 	}
 
 	return res.GetStatus(), nil
