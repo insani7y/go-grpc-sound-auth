@@ -49,10 +49,12 @@ func (s *server) configureRouter() {
 // 		),
 // 	)
 
-	s.router.HandleFunc("/register", s.HandleUsersCreate()).Methods("POST", "OPTIONS")
-	s.router.HandleFunc("/jwt", s.HandleJWTCreate()).Methods("POST", "OPTIONS")
+    main := s.router.PathPrefix("/go").Subrouter()
 
-	private := s.router.PathPrefix("/api").Subrouter()
+	main.HandleFunc("/register", s.HandleUsersCreate()).Methods("POST", "OPTIONS")
+	main.HandleFunc("/jwt", s.HandleJWTCreate()).Methods("POST", "OPTIONS")
+
+	private := main.PathPrefix("/api").Subrouter()
 	private.Use(s.AuthenticateUser)
 	private.HandleFunc("/me", s.HandleMe()).Methods("GET", "OPTIONS")
 }
@@ -77,6 +79,7 @@ func (s *server) HandleUsersCreate() http.HandlerFunc {
 		status, err := grpcserver.CreateUser(r.FormValue("email"), filesBytes)
 		if err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
+			return
 		}
 
 		s.respond(w, r, http.StatusCreated, status)
@@ -96,12 +99,14 @@ func (s *server) HandleJWTCreate() http.HandlerFunc {
 		file := files[0]
 		fileBytes, err := io.ReadAll(file)
 		if err != nil {
-			s.error(w, r, http.StatusInternalServerError, err)
+			s.error(w, r, http.StatusBadRequest, err)
+			return
 		}
 
 		jwt, err := grpcserver.CreateJWT(r.FormValue("email"), fileBytes)
 		if err != nil {
-			s.error(w, r, http.StatusInternalServerError, err)
+			s.error(w, r, http.StatusUnauthorized, err)
+			return
 		}
 
 		var data = make(map[string]string)

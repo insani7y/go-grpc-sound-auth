@@ -10,6 +10,6 @@ func NewConfig() *Config {
 	return &Config{
 		TokenHeader: "Token",
 		AuthSecret: "secret",
-		MFCCUrl: "http://127.0.0.1:8000/mfcc/",
+		MFCCUrl: "http://python-backend:8000/py/mfcc/",
 	}
 }

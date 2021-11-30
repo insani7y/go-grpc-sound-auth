@@ -96,7 +96,12 @@ func GetMFCCFeatures(fileBytes []byte, url string) ([][]float64, error) {
 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	rsp, _ := client.Do(req)
+	rsp, err := client.Do(req)
+
+	if err != nil {
+	    return nil, err
+	}
+
 	if rsp.StatusCode != http.StatusOK {
 		log.Printf("Request failed with response code: %d", rsp.StatusCode)
 	}
